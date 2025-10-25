@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>ETS2 Multi Map</title>
+  <meta charset="utf-8" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <style>#map { height: 100vh; }</style>
+</head>
+<body>
+<div id="map"></div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script>
+var map = L.map('map').setView([50.0755, 14.4378], 5);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors'
+}).addTo(map);
+
+var socket = io();
+
+// Markery hráčů
+var markers = {};
+
+// Funkce pro převod ETS2 souřadnic na GPS (doladit podle tvé kalibrace)
+function etsToLatLon(x, z){
+    const base_lat = 50.7;   // stejný jako v Python klientovi
+    const base_lon = 10.5;
+    const scale_lat = -0.0002044724;
+    const scale_lon = 0.0002597655;
+    const x1 = 0;
+    const z1 = 0;
+    const lat = base_lat + (z - z1) * scale_lat;
+    const lon = base_lon + (x - x1) * scale_lon;
+    return [lat, lon];
+}
+
+
+// Aktualizace poloh všech hráčů
+socket.on('positions', function(data){
+    for (const id in data){
+        const p = data[id];
+
+        // Vytvoření popupu s podmíněným řádkem pro start–cíl
+        let popupText = `<b>${id}</b><br>` +
+                        `Tahač: ${p.truck_brand || '–'} ${p.truck_model || '–'}<br>` +
+                        `Rychlost: ${p.speed != null ? Math.round(p.speed) : 0} km/h<br>` +
+                        `Náklad: ${p.cargo || '–'}`;
+
+        if (p.job_start && p.job_end){
+            popupText += `<br>${p.job_start} → ${p.job_end}`;
+        }
+
+        if (markers[id]){
+            markers[id].setLatLng([p.lat, p.lon]);
+            markers[id].bindPopup(popupText);
+        } else {
+            markers[id] = L.marker([p.lat, p.lon]).addTo(map).bindPopup(popupText);
+        }
+    }
+});
+
+for (const id in markers){
+    if (!data[id]){
+        map.removeLayer(markers[id]);
+        delete markers[id];
+    }
+}
+
+</script>
+</body>
+</html>
