@@ -21,7 +21,9 @@ def handle_update(data):
             'lat': data.get('lat'),
             'lon': data.get('lon'),
             'speed': data.get('speed'),
-            'cargo': data.get('cargo')
+            'cargo': data.get('cargo'),
+            'truck_brand': data.get('truck_brand', '–'),
+            'truck_model': data.get('truck_model', '–')
         }
         emit('positions', players, broadcast=True)
 
