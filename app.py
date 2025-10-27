@@ -31,10 +31,10 @@ def handle_update(data):
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=5000)
     
-@socketio.on('goodbye')
+@socketio.on('goodbye', namespace='/')
 def handle_goodbye(data):
     player_id = data.get('player_id')
     if player_id and player_id in players:
         players.pop(player_id)
-        emit('positions', players, broadcast=True)
+        emit('positions', players, broadcast=True, namespace='/')
 
